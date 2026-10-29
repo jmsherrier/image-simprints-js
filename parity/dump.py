@@ -4,8 +4,13 @@ originals, written as the same encoded files, with Python's codes and match resu
     <image-simprints venv>/python parity/dump.py <corpus dir> [limit]
 
 Writes parity/data/: images/<n>/<name>.<ext>, pixels/<n>.png (the original as Python
-decoded it, lossless), vectors/*, and python.json.
+decoded it, lossless), vectors/*, and python.json. The copies are made from the original
+with its colour profile applied, as now; codes and results are also written with
+profiles ignored (pixels taken as sRGB): pixels/<n>-ignore.png, "codes_ignore",
+"python_ignore".
 """
+
+import io
 
 import json
 import random
@@ -27,6 +32,14 @@ def ext(data: bytes) -> str:
     return EXT.get(data[:2], "avif")
 
 
+def decoded(data: bytes, profiles: str):
+    with Image.open(io.BytesIO(data)) as im:
+        im.load()
+        if profiles == "ignore":
+            im.info.pop("icc_profile", None)
+        return R._to_srgb(im)
+
+
 def one(job):
     i, path, bg = job
     src = Image.fromarray(R.decode(path))
@@ -34,18 +47,22 @@ def one(job):
     imgs["original"] = path.read_bytes()
     d = OUT / "images" / f"{i:03d}"
     d.mkdir(parents=True, exist_ok=True)
-    files, codes = {}, {}
+    files, codes, codes_ignore = {}, {}, {}
     for name, data in imgs.items():
         f = f"{name.replace(' ', '_')}.{ext(data) if name != 'original' else path.suffix[1:]}"
         (d / f).write_bytes(data)
         files[name] = f"images/{i:03d}/{f}"
-        codes[name] = R.generate(data, "verifier", {"verifier_codes": 64})
-    Image.fromarray(R.decode(path)).save(OUT / "pixels" / f"{i:03d}.png")
-    found = {}
-    for manip, v, c in pairs:
-        m = R.match(codes[v], T.first(codes[c], 20))
-        found[manip] = m["relationship"]
-    return {"name": path.name, "files": files, "codes": codes, "pairs": pairs, "python": found}
+        codes[name] = R.generate(decoded(data, "convert"), "verifier", {"verifier_codes": 64})
+        codes_ignore[name] = R.generate(decoded(data, "ignore"), "verifier", {"verifier_codes": 64})
+    data = path.read_bytes()
+    Image.fromarray(decoded(data, "convert")).save(OUT / "pixels" / f"{i:03d}.png")
+    Image.fromarray(decoded(data, "ignore")).save(OUT / "pixels" / f"{i:03d}-ignore.png")
+
+    def found(cs):
+        return {manip: R.match(cs[v], T.first(cs[c], 20))["relationship"] for manip, v, c in pairs}
+
+    return {"name": path.name, "files": files, "codes": codes, "pairs": pairs, "python": found(codes),
+            "codes_ignore": codes_ignore, "python_ignore": found(codes_ignore)}
 
 
 def main():

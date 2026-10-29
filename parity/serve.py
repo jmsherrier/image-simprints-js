@@ -2,8 +2,8 @@
 
     python parity/serve.py [port]
 
-GET serves files from the repository root. POST /result/<name> writes the body to
-parity/results/<name>.json; POST /done stops the server.
+GET serves files from the repository root. POST /result/<run>/<name> writes the body to
+parity/results/<run>/<name>.json; POST /done stops the server.
 """
 
 import sys
@@ -25,7 +25,9 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_response(204)
         self.end_headers()
         if name[0] == "result":
-            (OUT / f"{Path(name[1]).name}.json").write_bytes(body)
+            run, n = name[1].split("/")
+            (OUT / Path(run).name).mkdir(parents=True, exist_ok=True)
+            (OUT / Path(run).name / f"{Path(n).name}.json").write_bytes(body)
         elif name[0] == "log":
             print(body.decode(), flush=True)
         elif name[0] == "done":

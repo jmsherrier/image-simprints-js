@@ -53,8 +53,9 @@ export function rgbOf(img) {
   return { rgb: out, width, height };
 }
 
-export async function pixelsOf(blob) {
-  const bmp = await createImageBitmap(blob, { imageOrientation: "from-image", premultiplyAlpha: "none", colorSpaceConversion: "default" });
+export async function pixelsOf(blob, profiles = "convert") {
+  const colorSpaceConversion = profiles === "ignore" ? "none" : "default";
+  const bmp = await createImageBitmap(blob, { imageOrientation: "from-image", premultiplyAlpha: "none", colorSpaceConversion });
   const c = new OffscreenCanvas(bmp.width, bmp.height);
   const ctx = c.getContext("2d", { colorSpace: "srgb", willReadFrequently: true });
   ctx.drawImage(bmp, 0, 0);
