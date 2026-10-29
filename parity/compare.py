@@ -1,6 +1,6 @@
 """Compare a browser run (parity/results/<run>) with Python (parity/data/python.json).
 
-    python parity/compare.py <run> > parity/summary-<run>.md
+    python parity/compare.py [out | out-simd] > parity/summary.md (or summary-simd.md)
 """
 
 import collections
@@ -64,14 +64,13 @@ def stats(v):
 
 def main():
     py = json.loads((HERE / "data" / "python.json").read_text(encoding="utf-8"))
-    run = sys.argv[1] if len(sys.argv) > 1 else "convert"
+    run = sys.argv[1] if len(sys.argv) > 1 else "out"
     res = {p.stem: json.loads(p.read_text(encoding="utf-8")) for p in (HERE / "results" / run).glob("*.json")}
     vec = res.pop("vectors")
-    sfx = "_ignore" if vec["profiles"] == "ignore" else ""
     out = []
     size = (ROOT / "build" / vec["build"] / "bin" / "opencv.js").read_bytes()
     simd = "SIMD" if vec["build"] == "out-simd" else "no SIMD"
-    out.append(f"# Browser parity, recipe 2, colour profiles: {vec['profiles']}\n")
+    out.append("# Browser parity, recipe 2.1\n")
     out.append(f"Browser: `{vec['userAgent']}`. OpenCV.js 5.0.0 (WebAssembly, single file, {simd}, no threads), "
                f"{len(size) / 1e6:.1f} MB, {len(gzip.compress(size, 9)) / 1e6:.1f} MB gzipped; ready in "
                f"{vec['opencv_load_ms']:.0f} ms.\n")
@@ -91,8 +90,8 @@ def main():
     orig, pix, derived = Codes(), Codes(), Codes()
     for r, b in rows:
         for name, c in b["codes"].items():
-            (orig if name == "original" else derived).add(r["codes" + sfx][name], c)
-        pix.add(r["codes" + sfx]["original"], b["pixels"])
+            (orig if name == "original" else derived).add(r["codes"][name], c)
+        pix.add(r["codes"]["original"], b["pixels"])
     out.append("\n## Codes, verifier at 512 px (up to 64 per image)\n")
     out.append("Codes are compared at the same rank. \"Any within t\" also accepts any Python code of that image.\n")
     out.append("| images | n | same number of codes | codes | same keypoint (x, y within 1e-5) | identical | within t = 24 | any within t |")
@@ -108,7 +107,7 @@ def main():
     per = collections.defaultdict(lambda: collections.Counter())
     for r, b in rows:
         for manip, _, _ in r["pairs"]:
-            p, q, m = r["python" + sfx][manip], b["browser"][manip], b["matcher"][manip]
+            p, q, m = r["python"][manip], b["browser"][manip], b["matcher"][manip]
             c = per[manip]
             c["pairs"] += 1
             c["py found"] += p != "none"

@@ -40,8 +40,8 @@ export async function load(cv, constantsUrl) {
 // --- decoding (browser pixels) ----------------------------------------------------------
 
 // RGB uint8 from an ImageData-like {data (RGBA), width, height}: alpha flattened onto
-// white exactly as recipe.py does. The browser has already decoded the file, applied
-// EXIF orientation and converted embedded colour profiles to sRGB.
+// white exactly as recipe.py does. The browser has already decoded the file and applied
+// EXIF orientation.
 export function rgbOf(img) {
   const { data, width, height } = img;
   const out = new Uint8Array(width * height * 3);
@@ -53,9 +53,9 @@ export function rgbOf(img) {
   return { rgb: out, width, height };
 }
 
-export async function pixelsOf(blob, profiles = "convert") {
-  const colorSpaceConversion = profiles === "ignore" ? "none" : "default";
-  const bmp = await createImageBitmap(blob, { imageOrientation: "from-image", premultiplyAlpha: "none", colorSpaceConversion });
+// Colour profiles are ignored (recipe 2.1): the decoded values are taken as sRGB.
+export async function pixelsOf(blob) {
+  const bmp = await createImageBitmap(blob, { imageOrientation: "from-image", premultiplyAlpha: "none", colorSpaceConversion: "none" });
   const c = new OffscreenCanvas(bmp.width, bmp.height);
   const ctx = c.getContext("2d", { colorSpace: "srgb", willReadFrequently: true });
   ctx.drawImage(bmp, 0, 0);
@@ -72,7 +72,7 @@ function settingsOf(settings) {
 }
 
 function versionOf(s) {
-  return ["image-simprints/2", ...Object.keys(DEFAULTS).filter((k) => s[k] !== DEFAULTS[k]).map((k) => `${k}=${s[k]}`)].join(";");
+  return ["image-simprints/2.1", ...Object.keys(DEFAULTS).filter((k) => s[k] !== DEFAULTS[k]).map((k) => `${k}=${s[k]}`)].join(";");
 }
 
 function prepare(cv, img, size) {
@@ -216,7 +216,7 @@ function codeOf(d, P, T, big) {
 // --- matching ----------------------------------------------------------------------------
 
 function parse(r) {
-  if (!/^image-simprints\/2(;|$)/.test(r.recipe_version || "")) throw new Error(`codes are not recipe 2: ${r.recipe_version}`);
+  if (!/^image-simprints\/2\.1(;|$)/.test(r.recipe_version || "")) throw new Error(`codes are not recipe 2.1: ${r.recipe_version}`);
   const [w, h] = r.prepared_size, short = Math.min(w, h);
   const c = r.codes.filter((x) => !x.stop);
   const codes = new Uint32Array(c.length * 8);
