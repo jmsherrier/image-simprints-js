@@ -3,7 +3,7 @@
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 [![OpenCV.js 5.0.0](https://img.shields.io/badge/OpenCV.js-5.0.0-5C3EE8)](build/)
 [![WebAssembly](https://img.shields.io/badge/WebAssembly-654FF0)](build/)
-[![Parity with Python: 99.8% of match decisions](https://img.shields.io/badge/parity%20with%20Python-99.8%25%20of%20matches-green)](parity/summary-convert.md)
+[![Parity with Python: 99.8% of match decisions](https://img.shields.io/badge/parity%20with%20Python-99.8%25%20of%20matches-green)](parity/)
 [![Status: proof of concept](https://img.shields.io/badge/status-proof%20of%20concept-orange)](https://github.com/jmsherrier/image-simprints#status)
 
 [image-simprints](https://github.com/jmsherrier/image-simprints) recipe 2 in the
