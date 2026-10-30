@@ -79,4 +79,5 @@ python parity/browser.py --build out-simd     # headless Edge or Chrome; --build
 python parity/compare.py out-simd > parity/summary-simd.md
 ```
 
-Apache-2.0. © 2026 Joseph Sherrier.
+Apache-2.0. © 2026 Joseph Sherrier. Third-party licences, and what shipping `opencv.js`
+requires: [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
